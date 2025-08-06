@@ -1,0 +1,36 @@
+{
+  "name": "buscador-github-backend",
+  "version": "1.0.0",
+  "description": "This is the backend project to connect the github frontend to realize the request to the API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamuelFDEZS/githubSearch-backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SamuelFDEZS/githubSearch-backend/issues"
+  },
+  "homepage": "https://github.com/SamuelFDEZS/githubSearch-backend#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "eslint": "^8.57.1",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.6.0",
+    "globals": "^16.3.0"
+  },
+  "keywords": []
+}
