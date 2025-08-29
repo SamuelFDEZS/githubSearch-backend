@@ -4,7 +4,10 @@ const fetch = require('node-fetch');
 const cors = require('cors');
 
 const app = express();
+app.use(cors());
+
 app.use(cors({
+    origin: '*',
     exposedHeaders: ['Link']
 }));
 
@@ -32,6 +35,120 @@ app.get('/api/user', async (req, res) => {
         res.json(data);
     } catch (err) {
         console.error('Error fetching user:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/user/summary', async (req, res) => {
+    const { username } = req.query;
+    if (!username) return res.status(400).json({ error: 'Username is required' });
+
+    try {
+        const response = await fetch(`https://api.github.com/users/${username}`, {
+            headers: {
+                Authorization: `token ${process.env.GITHUB_TOKEN}`,
+                Accept: 'application/vnd.github.v3+json'
+            }
+        });
+
+        const data = await response.json();
+        if (!response.ok) return res.status(response.status).json({ error: data.message });
+
+        const summary = {
+            followers: data.followers,
+            public_repos: data.public_repos,
+            following: data.following,
+            created_at: data.created_at,
+            updated_at: data.updated_at
+        };
+
+        res.json(summary);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/user/repos', async (req, res) => {
+    const { username } = req.query;
+    if (!username) return res.status(400).json({ error: 'Username is required' });
+
+    try {
+        const response = await fetch(`https://api.github.com/users/${username}/repos`, {
+            headers: {
+                Authorization: `token ${process.env.GITHUB_TOKEN}`,
+                Accept: 'application/vnd.github.v3+json'
+            }
+        });
+
+        const data = await response.json();
+        if (!response.ok) return res.status(response.status).json({ error: data.message });
+
+        const linkHeader = response.headers.get('link');
+
+        if (linkHeader) {
+            res.set('Link', linkHeader);
+        }
+
+        res.json({ count: data.length });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/user/received-events', async (req, res) => {
+    const { username } = req.query;
+    if (!username) return res.status(400).json({ error: 'Username is required' });
+
+    try {
+        const response = await fetch(`https://api.github.com/users/${username}/received_events?per_page=1`, {
+            headers: {
+                Authorization: `token ${process.env.GITHUB_TOKEN}`,
+                Accept: 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            return res.status(response.status).json({ error: error.message });
+        }
+
+        const linkHeader = response.headers.get('Link');
+        const match = linkHeader?.match(/&page=(\d+)>; rel="last"/);
+        const count = match ? parseInt(match[1]) : 1;
+
+        res.json({ count });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/user/subscriptions', async (req, res) => {
+    const { username } = req.query;
+    if (!username) return res.status(400).json({ error: 'Username is required' });
+
+    try {
+        const response = await fetch(`https://api.github.com/users/${username}/subscriptions?per_page=1`, {
+            headers: {
+                Authorization: `token ${process.env.GITHUB_TOKEN}`,
+                Accept: 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            return res.status(response.status).json({ error: error.message });
+        }
+
+        const linkHeader = response.headers.get('Link');
+        const match = linkHeader?.match(/&page=(\d+)>; rel="last"/);
+        const count = match ? parseInt(match[1]) : 1;
+
+        res.json({ count });
+    } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
