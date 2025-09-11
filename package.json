@@ -1,10 +1,15 @@
 {
-  "name": "buscador-github-backend",
+  "name": "github-search-api",
   "version": "1.0.0",
+  "private": "true",
   "description": "This is the backend project to connect the github frontend to realize the request to the API",
-  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vercel dev",
     "start": "node server.js"
   },
   "repository": {
@@ -19,9 +24,10 @@
   "homepage": "https://github.com/SamuelFDEZS/githubSearch-backend#readme",
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "serverless-http": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
