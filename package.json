@@ -1,16 +1,13 @@
 {
-  "name": "github-search-api",
+  "name": "github-search-backend",
   "version": "1.0.0",
-  "private": "true",
+  "private": true,
   "description": "This is the backend project to connect the github frontend to realize the request to the API",
-  "type": "commonjs",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "vercel dev",
-    "start": "node server.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -25,7 +22,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
-    "express": "^5.1.0",
+    "express": "^4.19.2",
     "node-fetch": "^2.7.0",
     "serverless-http": "^4.0.0"
   },

@@ -25,6 +25,7 @@ const GH_HEADERS = {
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 app.get('/api/user', async (req, res) => {
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
     const { username } = req.query;
     if (!username) return res.status(400).json({ error: 'Username is required' });
 
@@ -192,4 +193,6 @@ app.get('/api/repo', async (req, res) => {
     }
 });
 
-module.exports = serverless(app);
+module.exports = (req, res) => {
+    app(req, res);
+};
