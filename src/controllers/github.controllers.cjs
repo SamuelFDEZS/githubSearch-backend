@@ -184,6 +184,12 @@ const searchRepos = async (req, res) => {
             });
         }
 
+        const linkHeader = response.headers.get('link');
+
+        if (linkHeader) {
+            res.set('Link', linkHeader);
+        }
+
         return res.status(200).json(result);
     } catch (error) {
         console.error(error);
