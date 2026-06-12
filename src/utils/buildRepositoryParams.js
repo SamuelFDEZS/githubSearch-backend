@@ -10,12 +10,14 @@ const formatQualifierValue = (value) => {
     return sanitizedValue;
 };
 
-const isValidPositiveNumber = (value) => {
-    return value !== undefined &&
-        value !== null &&
-        value !== '' &&
-        Number.isInteger(Number(value)) &&
-        Number(value) >= 0;
+const isValidNumericQualifier = (value) => {
+    if (!value) {
+        return false;
+    }
+
+    return /^(?:\d+|\d+\.\.\d+|>=\d+|>\d+|<=\d+|<\d+)$/.test(
+        String(value).trim()
+    );
 };
 
 const getPushedDate = (value) => {
@@ -55,7 +57,7 @@ const buildRepositoryParams = ({
     sort,
     order,
     page = 1,
-    perPage = 10
+    perPage = 30
 }) => {
     const queryParts = [];
 
@@ -69,12 +71,12 @@ const buildRepositoryParams = ({
         );
     }
 
-    if (isValidPositiveNumber(stars)) {
-        queryParts.push(`stars:>=${Number(stars)}`);
+    if (isValidNumericQualifier(stars)) {
+        queryParts.push(`stars:${stars}`);
     }
 
-    if (isValidPositiveNumber(forks)) {
-        queryParts.push(`forks:>=${Number(forks)}`);
+    if (isValidNumericQualifier(forks)) {
+        queryParts.push(`forks:${forks}`);
     }
 
     const pushedDate = getPushedDate(date);
