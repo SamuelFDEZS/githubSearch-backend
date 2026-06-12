@@ -28,7 +28,6 @@ const validateUser = (req, res, next) => {
 
     req.body.username = username.trim();
     req.body.email = email.trim().toLowerCase();
-    req.body.password = password.trim();
 
     next();
 };

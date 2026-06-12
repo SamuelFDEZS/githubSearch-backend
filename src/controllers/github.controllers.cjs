@@ -1,3 +1,5 @@
+const buildRepositoryParams = require('../utils/buildRepositoryParams.js');
+
 const GH_HEADERS = {
     Authorization: `token ${process.env.GITHUB_TOKEN}`,
     Accept: 'application/vnd.github.v3+json',
@@ -141,20 +143,55 @@ const getReposFromUser = async (req, res) => {
 };
 
 const searchRepos = async (req, res) => {
-    const { q, page = 1, per_page = 30 } = req.query;
-    if (!q) return res.status(400).json({ error: 'Query is required' });
-
     try {
-        const response = await fetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&page=${page}&per_page=${per_page}`, { headers: GH_HEADERS });
-        const data = await response.json();
+        const params = buildRepositoryParams({
+            search: req.query.search,
+            language: req.query.language,
+            stars: req.query.stars,
+            forks: req.query.forks,
+            date: req.query.date,
+            topic: req.query.topic,
+            license: req.query.license,
+            sort: req.query.sort,
+            order: req.query.order,
+            page: req.query.page,
+            perPage: req.query.perPage
+        });
 
-        const linkHeader = response.headers.get('link');
-        if (linkHeader) res.set('Link', linkHeader);
+        if (!params.get('q')) {
+            return res.status(400).json({
+                success: false,
+                message: 'A search term or at least one filter is required'
+            });
+        }
 
-        res.json(data);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Error fetching from GitHub' });
+        const response = await fetch(
+            `https://api.github.com/search/repositories?${params.toString()}`,
+            {
+                headers: {
+                    Accept: 'application/vnd.github+json',
+                    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+                }
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return res.status(response.status).json({
+                success: false,
+                message: result.message || 'Could not search repositories'
+            });
+        }
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
     }
 };
 
