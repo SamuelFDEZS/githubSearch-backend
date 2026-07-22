@@ -10,6 +10,13 @@ app.use(cors({
     exposedHeaders: ['Link']
 }));
 
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: 'API is running'
+    });
+});
+
 const githubRouter = require('./routes/github.routes.cjs');
 const userRouter = require('./routes/users.routes.cjs');
 

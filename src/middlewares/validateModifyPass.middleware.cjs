@@ -5,6 +5,13 @@ const validateModifyPass = (req, res, next) => {
         confirmPassword
     } = req.body ?? {};
 
+    if (!oldPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({
+            success: false,
+            message: 'Missing data'
+        });
+    }
+
     if (
         typeof oldPassword !== 'string' ||
         typeof newPassword !== 'string' ||
@@ -17,9 +24,9 @@ const validateModifyPass = (req, res, next) => {
     }
 
     if (
-        oldPassword.length === 0 ||
-        newPassword.length === 0 ||
-        confirmPassword.length === 0
+        !oldPassword.trim() ||
+        !newPassword.trim() ||
+        !confirmPassword.trim()
     ) {
         return res.status(400).json({
             success: false,
@@ -31,6 +38,13 @@ const validateModifyPass = (req, res, next) => {
         return res.status(400).json({
             success: false,
             message: 'Passwords do not match'
+        });
+    }
+
+    if (oldPassword === newPassword) {
+        return res.status(400).json({
+            success: false,
+            message: 'New password cannot be the same as the old password'
         });
     }
 
