@@ -305,4 +305,148 @@ describe('user routes', () => {
             });
         });
     });
+
+    describe('PATCH /user/me', () => {
+        test('returns 400 when user data is missing', async () => {
+            const user = {
+                id: '2',
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                phone: '612345678',
+                created_at: new Date('2026-01-15T10:30:00Z')
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+
+            const response = await request(app)
+                .patch('/user/me')
+                .set('authorization', 'Bearer auth_test')
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(response.body).toEqual({
+                success: false,
+                message: 'At least one field must be provided'
+            });
+        });
+
+        test('returns 400 when a field is not allowed', async () => {
+            const user = {
+                id: '2',
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                password: 'qwerty',
+                phone: '612345678',
+                created_at: new Date('2026-01-15T10:30:00Z')
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+
+            const response = await request(app)
+                .patch('/user/me')
+                .set('authorization', 'Bearer auth_test')
+                .send(user);
+
+            expect(response.status).toBe(400);
+            expect(response.body).toEqual({
+                success: false,
+                message: 'Invalid fields'
+            });
+        });
+
+        test('returns 500 when database connection fails', async () => {
+            const user = {
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                phone: '612345678'
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(1) }
+            );
+
+            pool.query.mockRejectedValue(new Error('Database error'));
+
+            const response = await request(app)
+                .patch('/user/me')
+                .set('authorization', 'Bearer auth_test')
+                .send(user);
+
+            console.log(response.body);
+
+            expect(response.status).toBe(500);
+            expect(response.body).toEqual({
+                success: false,
+                message: 'Internal Server error'
+            });
+        });
+
+        test('returns 404 when rowcount is 0', async () => {
+            const user = {
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                phone: '612345678'
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(1) }
+            );
+
+            pool.query.mockResolvedValue({
+                rowCount: 0,
+                rows: []
+            });
+
+            const response = await request(app)
+                .patch('/user/me')
+                .set('authorization', 'Bearer auth_test')
+                .send(user);
+
+            expect(response.status).toBe(404);
+            expect(response.body).toEqual({
+                success: false,
+                message: 'User not found'
+            });
+        });
+
+        test('returns 200 when data is valid', async () => {
+            const user = {
+                id: 1,
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                phone: '612345678',
+                created_at: new Date('2026-01-15T10:30:00Z')
+            };
+
+            const { password, id, created_at, ...rest } = user;
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+
+            pool.query.mockResolvedValue({
+                rowCount: 1,
+                rows: [user]
+            });
+
+            const response = await request(app)
+                .patch('/user/me')
+                .set('authorization', 'Bearer auth_test')
+                .send(rest);
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({
+                success: true,
+                message: 'User successfully modified',
+                data: {
+                    ...user,
+                    created_at: user.created_at.toISOString()
+                }
+            });
+        });
+    });
 });
