@@ -21,6 +21,9 @@ const { default: expectCookies } = require('supertest/lib/cookies');
 
 describe('user routes', () => {
     describe('GET /user', () => {
+        beforeEach(() => {
+            jest.resetAllMocks();
+        });
         test('returns status 500 when database connection fails', async () => {
             pool.query.mockRejectedValue(new Error('Database Error'));
 
@@ -77,6 +80,9 @@ describe('user routes', () => {
     });
 
     describe('GET /user/me', () => {
+        beforeEach(() => {
+            jest.resetAllMocks();
+        });
         test('returns status 404 when rowcount is 0', async () => {
             const user = {
                 id: 1,
@@ -139,6 +145,10 @@ describe('user routes', () => {
     });
 
     describe('POST /user/register', () => {
+        beforeEach(() => {
+            jest.resetAllMocks();
+        });
+
         test('returns 500 when database connection fails', async () => {
             const user = {
                 username: 'Samuel',
@@ -193,6 +203,10 @@ describe('user routes', () => {
     });
 
     describe('POST /user/login', () => {
+        beforeEach(() => {
+            jest.resetAllMocks();
+        });
+
         test('returns 500 when conection to database fails', async () => {
             const user = {
                 username: 'Samuel',
@@ -307,6 +321,10 @@ describe('user routes', () => {
     });
 
     describe('PATCH /user/me', () => {
+        beforeEach(() => {
+            jest.resetAllMocks();
+        });
+
         test('returns 400 when user data is missing', async () => {
             const user = {
                 id: '2',
@@ -375,8 +393,6 @@ describe('user routes', () => {
                 .patch('/user/me')
                 .set('authorization', 'Bearer auth_test')
                 .send(user);
-
-            console.log(response.body);
 
             expect(response.status).toBe(500);
             expect(response.body).toEqual({
@@ -448,5 +464,347 @@ describe('user routes', () => {
                 }
             });
         });
+    });
+
+    describe('PATCH /user/me/password', () => {
+        beforeEach(() => {
+            jest.resetAllMocks();
+        });
+
+        test('returns 500 when database connection fails', async () => {
+            const user = {
+                id: 1,
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                password: 'qwerty',
+                phone: '612345678',
+                created_at: new Date('2026-01-15T10:30:00Z')
+            };
+
+            const passwordData = {
+                oldPassword: 'qwerty',
+                newPassword: 'qwerty1234',
+                confirmPassword: 'qwerty1234'
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+            pool.query.mockRejectedValue(new Error('Database error'));
+
+            const response = await request(app)
+                .patch('/user/me/password')
+                .set('authorization', 'Bearer test_auth')
+                .send(passwordData);
+
+            console.log(response.body);
+
+            expect(response.status).toBe(500);
+            expect(response.body).toEqual({
+                success: false,
+                message: 'Internal Server error'
+            });
+        });
+
+        test('returns 404 when rowcount is 0', async () => {
+            const user = {
+                id: 1,
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                password: 'qwerty',
+                phone: '612345678',
+                created_at: new Date('2026-01-15T10:30:00Z')
+            };
+
+            const passwordData = {
+                oldPassword: 'qwerty',
+                newPassword: 'qwerty1234',
+                confirmPassword: 'qwerty1234'
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+
+            pool.query.mockResolvedValue({
+                rowCount: 0,
+                rows: []
+            });
+
+            const response = await request(app)
+                .patch('/user/me/password')
+                .set('authorization', 'Bearer test_auth')
+                .send(passwordData);
+
+            expect(response.status).toBe(404);
+            expect(response.body).toEqual({
+                success: false,
+                message: 'User not found'
+            });
+        });
+
+        test('returns 401 when passwords does not match', async () => {
+            const user = {
+                id: 1,
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                password: 'qwerty',
+                phone: '612345678',
+                created_at: new Date('2026-01-15T10:30:00Z')
+            };
+
+            const { password, ...rest } = user;
+
+            const passwordData = {
+                oldPassword: 'qwerty',
+                newPassword: 'qwerty1234',
+                confirmPassword: 'qwerty1234'
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+
+            bcrypt.compare.mockResolvedValue(false);
+
+            pool.query.mockResolvedValueOnce({
+                rowCount: 1,
+                rows: [passwordData.oldPassword]
+            });
+
+            pool.query.mockResolvedValueOnce({
+                rowCount: 1,
+                rows: [rest]
+            });
+
+            const response = await request(app)
+                .patch('/user/me/password')
+                .set('authorization', 'Bearer test_auth')
+                .send(passwordData);
+
+            expect(response.status).toBe(401);
+            expect(response.body).toEqual({
+                success: false,
+                message: 'Invalid password'
+            });
+        });
+
+        test('returns 404 when update query rowcount is 0', async () => {
+            const user = {
+                id: 1,
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                password: 'qwerty',
+                phone: '612345678',
+                created_at: new Date('2026-01-15T10:30:00Z')
+            };
+
+            const passwordData = {
+                oldPassword: 'qwerty',
+                newPassword: 'qwerty1234',
+                confirmPassword: 'qwerty1234'
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+
+            bcrypt.compare.mockResolvedValue(true);
+            bcrypt.hash.mockResolvedValue('hashed_password');
+
+            pool.query.mockResolvedValueOnce({
+                rowCount: 1,
+                rows: [{
+                    ...user,
+                    password_hash: 'hashed-password'
+                }]
+            });
+
+            pool.query.mockResolvedValueOnce({
+                rowCount: 0,
+                rows: []
+            });
+
+            const response = await request(app)
+                .patch('/user/me/password')
+                .set('authorization', 'Bearer test_auth')
+                .send(passwordData);
+
+            expect(pool.query).toHaveBeenCalledTimes(2);
+
+            expect(response.status).toBe(404);
+            expect(response.body).toEqual({
+                success: false,
+                message: 'User not found'
+            });
+        });
+
+        test('returns 200 when data is valid', async () => {
+            const user = {
+                id: 1,
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                password: 'qwerty',
+                phone: '612345678',
+                created_at: new Date('2026-01-15T10:30:00Z')
+            };
+
+            const passwordData = {
+                oldPassword: 'qwerty',
+                newPassword: 'qwerty1234',
+                confirmPassword: 'qwerty1234'
+            };
+
+            const { password, ...rest } = user;
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+
+            bcrypt.compare.mockResolvedValue(true);
+            bcrypt.hash.mockResolvedValue('hashed_password');
+            pool.query.mockResolvedValueOnce({
+                rowCount: 1,
+                rows: [{
+                    ...user,
+                    password_hash: 'hashed-password'
+                }]
+            });
+
+            pool.query.mockResolvedValueOnce({
+                rowCount: 1,
+                rows: [rest]
+            });
+
+            const response = await request(app)
+                .patch('/user/me/password')
+                .set('authorization', 'Bearer test_auth')
+                .send(passwordData);
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({
+                success: true,
+                message: 'Password successfully modified'
+            });
+        });
+    });
+
+    describe('DELETE /user/me', () => {
+        test('returns 500 when connection to database fails', async () => {
+            const user = {
+                id: 1,
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                phone: '612345678',
+                created_at: new Date('2026-01-15T10:30:00Z')
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+
+            pool.query.mockRejectedValue(new Error('Database error'));
+
+            const result = await request(app)
+                .delete('/user/me')
+                .set('authorization', 'Bearer test_auth')
+                .send(user);
+
+            expect(result.status).toBe(500);
+            expect(result.body).toEqual({
+                success: false,
+                message: 'Internal Server error'
+            });
+        });
+
+        test('returns 404 when rowcount is 0', async () => {
+            const user = {
+                id: 1,
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                phone: '612345678',
+                created_at: new Date('2026-01-15T10:30:00Z')
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+
+            pool.query.mockResolvedValue({
+                rowCount: 0,
+                rows: []
+            });
+
+            const response = await request(app)
+                .delete('/user/me')
+                .set('authorization', 'Bearer test_auth')
+                .send(user);
+
+            expect(response.status).toBe(404);
+            expect(response.body).toEqual({
+                success: false,
+                message: 'User not found'
+            });
+        });
+
+        test('returns 200 when data is valid', async () => {
+            const user = {
+                id: 1,
+                username: 'Samuel',
+                email: 'samuel@gmail.com',
+                phone: '612345678'
+            };
+
+            JWT.verify.mockReturnValue(
+                { sub: String(user.id) }
+            );
+
+            pool.query.mockResolvedValue({
+                rowCount: 1,
+                rows: [user]
+            });
+
+            const response = await request(app)
+                .delete('/user/me')
+                .set('authorization', 'Bearer test_auth')
+                .send(user);
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({
+                success: true,
+                message: 'User successfully deleted',
+                data: user
+            });
+        });
+
+        // test('returns 400 when user id is NaN', async () => {
+        //     const user = {
+        //         id: 'abc',
+        //         username: 'Samuel',
+        //         email: 'samuel@gmail.com',
+        //         phone: '612345678',
+        //         created_at: new Date('2026-01-15T10:30:00Z')
+        //     };
+
+        //     JWT.verify.mockReturnValue(
+        //         { sub: String(user.id) }
+        //     );
+
+        //     pool.query.mockResolvedValue({
+        //         rowCount: 0,
+        //         rows: []
+        //     });
+
+        //     const response = await request(app)
+        //         .delete('/user/me')
+        //         .set('authorization', 'Bearer test_auth')
+        //         .send([user]);
+
+        //     expect(response.status).toBe(400);
+        //     expect(response.body).toEqual({
+        //         success: false,
+        //         message: 'Bad request'
+        //     });
+        // });
     });
 });
