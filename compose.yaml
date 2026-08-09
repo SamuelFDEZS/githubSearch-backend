@@ -10,6 +10,7 @@ services:
       DB_PASSWORD: mypassword
       DB_NAME: github_search
       JWT_SECRET: ${JWT_SECRET}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
     depends_on:
       - database
 

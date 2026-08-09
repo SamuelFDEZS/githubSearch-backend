@@ -10,9 +10,9 @@ router.get('/user/summary', getUserSummary);
 
 router.get('/user/repos', getUserRepos);
 
-router.get('/user/received-events', getUserSubscriptions);
+router.get('/user/received-events', getUserEvents);
 
-router.get('/user/subscriptions', getUserEvents);
+router.get('/user/subscriptions', getUserSubscriptions);
 
 router.get('/search-users', searchUsers);
 
